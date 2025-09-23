@@ -18,6 +18,13 @@
             margin: 0;
             padding: 0;
         }
+        .inpMoBtn{
+            display:none;
+        }
+
+        .CancelBtn{
+            display:none;
+        }
     </style>
 </head>
 
@@ -27,8 +34,11 @@
         <div class="row">
             <div class="col-md-6 offset-md-3 d-flex">
                 <input type="text" placeholder="입력하세요" value="" class="inp form-control me-2" />
+
+                <input type="hidden" class="numInp" />
                 <button class="btn btn-primary inpBtn" style="width:100px">입력</button>
-                <button class="btn btn-danger inpMoBtn d-none" style="width:100px">수정</button>
+                <button class="btn btn-danger inpMoBtn" style="width:100px">수정</button>
+                <button class="btn btn-warning CancelBtn" style="width:100px">취소</button>
             </div>
         </div>
         <div class="row px-3">
@@ -89,6 +99,25 @@
         //     },
         // ];
 
+        // let listView = [
+        //     {
+        //         todo: "자바",
+        //         done: false,
+        //     },
+        //     {
+        //         todo: "자바스크립트",
+        //         done: false,
+        //     },
+        //     {
+        //         todo: "도커",
+        //         done: true,
+        //     },
+        //     {
+        //         todo: "mysql",
+        //         done: true,
+        //     },
+        // ];
+
         let listView = [];
 
         // dom
@@ -97,13 +126,21 @@
         const inpNumElem = document.querySelector('.numInp');
         const btnElem = document.querySelector(".inpBtn"); // event
         const btnMoElem = document.querySelector(".inpMoBtn"); // event
+        const CancelElem = document.querySelector(".CancelBtn"); // event
+        const DelAllElem = document.querySelector('.delAll');
 
         //create
         btnElem.addEventListener("click", function () {
             if (inpElem.value != '') {
                 let value = { todo: inpElem.value, done: false }; // 초기값
                 listView.push(value);
-                inpElem.value = ''; //set
+                
+                // localStorage update
+                let valueData = JSON.stringify(listView);
+                // 객체를 json 문자열로 변환하는 내장 함수
+                localStorage.setItem("todoData",valueData);
+                inpElem.value = ''; // set
+                
                 viewData();
             } else {
                 alert('오늘의 할 일을 입력하세요');
@@ -111,19 +148,42 @@
         });
 
         // modify
-            btnMoElem.addEventListener('click', function() {
-                // alert('진짜수정!');
-                listView[inpNumElem.value].todo = inpElem.value;
+        btnMoElem.addEventListener('click', function() {
+            // alert('진짜수정!');
+            listView[inpNumElem.value].todo = inpElem.value;
 
-                // 1 버튼 입력으로 변경
-                btnElem.style.display = 'block';
-                btnMoElem.style.display = 'none';
-                inpElem.value ='';
-            })
+            // 1 버튼 입력으로 변경
+            btnElem.style.display = 'block';
+            btnMoElem.style.display = 'none';
+            CancelElem.style.display = 'none';
+            inpElem.value ='';
+            viewData();
+        });
+
+         CancelElem.addEventListener('click', function() {
+            inpElem.value = '';
+            viewData();
+        });
+
+        // // cancel
+        // cancelElem.addEventListener('click', function(){
+        //     if(inpElem.value == true){
+        //         let value = {}
+        //     }
+
+        // });
 
         //function
         // read
+        // 여러곳에서 사용하기 위해 배열 -> for문 1~100, "문자" -> 함수 -> Dom:document.querySelector("") -> event("click") -> localStorage
         function viewData() {
+            // localStorage
+            if(localStorage.length > 0){
+                let localData = localStorage.getItem("todoData");
+                listView = JSON.parse(localData);
+                // json 문자열을 javascript 객체로 변환하는 내장 함수
+            }
+
             let viewData = '';
             listView.forEach(function (item, i) {
                 viewData += `
@@ -156,22 +216,17 @@
         }
         viewData();
 
-        //delete
-        function del(index) {
-            alert(index);
-        }
-
         // done
-        function yesDone(index) {
-            console.log(index);
-            listView[index].done = true;
-            viewData();
-        }
+        // function yesDone(index) {
+        //     console.log(index);
+        //     listView[index].done = true;
+        //     viewData();
+        // }
 
-        function noDone(index) {
-            listView[index].done = false;
-            viewData();
-        }
+        // function noDone(index) {
+        //     listView[index].done = false;
+        //     viewData();
+        // }
 
         function done(index) {
             listView[index].done = !listView[index].done;
@@ -181,9 +236,10 @@
         function modi(index, todo){
             // alert('수정' + todo);
             inpElem.value = todo;
+            inpNumElem.value = index;
             btnElem.style.display = 'none';
             btnMoElem.style.display = 'block';
-            viewData();
+            CancelElem.style.display = 'block';
         }
 
          /*
@@ -191,9 +247,27 @@
       - done:true 이면 수정, 삭제금지 (if)
       - done:true 이면 글자, 글자를 text-decoration:line-through
       - done:false 원상복구
-      - 수정시 취소버튼 추가
+      - 수정시 취소버튼 추가 O
+      - done 체크, todo title 수정, todo삭제 ,전체 삭제, localStorage 반영
       */
 
+        // 개별 삭제
+        function del(num){
+            let valueData = JSON.stringify(listView);
+                // 객체를 json 문자열로 변환하는 내장 함수
+                localStorage.removeItem("todoData",valueData);
+            // alert('삭제');
+            listView.splice(num,1);
+            viewData();
+        }
+
+        // 전체삭제
+        DelAllElem.addEventListener('click', function(){
+            let valueData = JSON.stringify(listView);
+            localStorage.clear("todoData",valueData);
+            listView = [];
+            viewData();
+        });
     </script>
 </body>
 
